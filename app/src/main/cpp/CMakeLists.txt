@@ -11,6 +11,9 @@ cmake_minimum_required(VERSION 3.22.1)
 # build script scope).
 project("myjni")
 
+# 导入头文件 文件夹
+#include_directories("")
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -24,14 +27,21 @@ project("myjni")
 # System.loadLibrary() and pass the name of the library defined here;
 # for GameActivity/NativeActivity derived applications, the same library name must be
 # used in the AndroidManifest.xml file.
-add_library(${CMAKE_PROJECT_NAME} SHARED
+
+file(GLOB allCPP *.c *.h *.cpp) # 批量导入所有源文件
+
+add_library(${CMAKE_PROJECT_NAME}
+        SHARED  # 表示 动态库
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native-lib.cpp)
+        ${allCPP})
+
+# 导入库文件
+#set(CMAKE_CXX_FLAGS "")
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
 # build script, prebuilt third-party libraries, or Android system libraries.
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
-        android
+        android  # 链接到本地库里面去的库
         log)
