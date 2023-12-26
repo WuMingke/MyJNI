@@ -72,9 +72,25 @@ public class MainActivity extends AppCompatActivity {
 
     public native void delQuote(); // 手动释放全局引用
 
+    /**
+     * 以上 都属于 静态注册，
+     * 缺点：
+     * 1 JNI函数名非常长
+     * 2 捆绑上层 包名+类名
+     * 3 运行期才会去匹配JNI函数，性能上低于动态注册
+     * 优点：
+     * 开发简单
+     */
+
+    public native void dynamicRegister();
+
+    public native void dynamicRegister2(String str);
 
     public void testFun(View view) {
 //        testQuote();
-        delQuote();
+//        delQuote();
+
+        dynamicRegister();
+        dynamicRegister2("erkuai");
     }
 }

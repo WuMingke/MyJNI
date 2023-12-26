@@ -163,3 +163,50 @@ Java_com_example_myjni_MainActivity_delQuote(JNIEnv *env, jobject thiz) {
 extern int age;
 
 extern void show();
+
+
+// 动态注册
+void dynamicMethod01(JNIEnv *env, jobject thiz) {
+    LOGI("动态注册的函数 dynamicMethod01 ...");
+}
+
+void dynamicMethod02(JNIEnv *env, jobject thiz, jstring str) {
+    LOGI("动态注册的函数 dynamicMethod02 ... value:%s ", env->GetStringUTFChars(str, nullptr));
+}
+
+
+JavaVM *javaVm = nullptr;
+const char *mainActivityClassName = "com/example/myjni/MainActivity";
+const char *javaMethod1 = "dynamicRegister";
+const char *javaMethod2 = "dynamicRegister2";
+static const JNINativeMethod jniNativeMethod[] = {
+        {javaMethod1, "()V",                   (void *) (dynamicMethod01)},
+        {javaMethod2, "(Ljava/lang/String;)V", (void *) (dynamicMethod02)},
+};
+
+// System.loadLibrary("myjni") 默认会调用 JNI_OnLoad
+// 相当于重写 JNI_OnLoad
+JNIEXPORT jint JNI_OnLoad(JavaVM *javaVm, void *) {
+
+    ::javaVm = javaVm; // this.javaVm = javaVm;
+
+    JNIEnv *jniEnv = nullptr;
+    int result = javaVm->GetEnv(reinterpret_cast<void **>(&jniEnv), JNI_VERSION_1_6);
+    if (result != JNI_OK) { // result == 0 成功
+        return JNI_ERR; // -1 崩溃
+    }
+
+    LOGI("JNI_OnLoad start ...");
+
+
+    jclass mainActivityClass = jniEnv->FindClass(mainActivityClassName);
+
+    jniEnv->RegisterNatives(mainActivityClass, jniNativeMethod,
+                            sizeof(jniNativeMethod) / sizeof(JNINativeMethod));
+
+    LOGI("JNI_OnLoad end ...");
+
+    return JNI_VERSION_1_6;
+}
+
+// 动态注册 结束
