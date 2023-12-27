@@ -309,18 +309,71 @@ Java_com_example_myjni_MainActivity_localCache(JNIEnv *env, jclass clazz, jstrin
     f_id = nullptr;
 }
 // 静态缓存1 在构造函数中调用
+static jfieldID f_name1_id = nullptr;
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myjni_MainActivity_initStaticCache(JNIEnv *env, jclass clazz) {
+    f_name1_id = env->GetStaticFieldID(clazz, "name1", "Ljava/lang/String;");
 
 }
 // 静态缓存2 使用
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myjni_MainActivity_staticCache(JNIEnv *env, jclass clazz, jstring str) {
+    // 多个静态变量的话，不会反复执行 env->GetStaticFieldID，类似于 ViewHolder 的作用
+    env->SetStaticObjectField(clazz, f_name1_id, str);
 }
 // 静态缓存3 清理
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_myjni_MainActivity_clearStaticCache(JNIEnv *env, jclass clazz) {
+    f_name1_id = nullptr;
+}
+
+
+// 异常
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_exception(JNIEnv *env, jclass clazz) {
+    // 假设操作 name999 =》 在 native 崩溃
+    jfieldID f_name = env->GetStaticFieldID(clazz, "name999",
+                                            "Ljava/lang/String;"); // JNI 本身就是属于 JVM 的
+    // 解决方式1
+    jthrowable thr = env->ExceptionOccurred(); // 检测本次执行，是否有异常， // 这里是native代码崩溃，
+    if (thr) { // 如果有异常，
+        env->ExceptionClear(); // 清除异常
+        LOGI("清除了异常...");
+    }
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_exceptionNativeToJava(JNIEnv *env, jclass clazz) {
+    jfieldID f_name = env->GetStaticFieldID(clazz, "name999",
+                                            "Ljava/lang/String;");
+    // 解决方式2 往Java层抛
+    // exceptionNativeToJava 的异常: java.lang.NoSuchFieldError: no "Ljava/lang/String;" field "name999"
+    // in class "Lcom/example/myjni/MainActivity;" or its superclasses
+
+    // 这里相当于自定义异常内容了，不写下面的代码，也行
+    // exceptionNativeToJava 的异常: java.lang.NoSuchFieldError: name999 有异常
+//    jthrowable thr = env->ExceptionOccurred();
+//    if (thr) {
+//        env->ExceptionClear();
+//
+//        jclass clz = env->FindClass("java/lang/NoSuchFieldError");
+//        env->ThrowNew(clz, "name999 有异常");
+//    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_exceptionJavaToNative(JNIEnv *env, jobject thiz) {
+    jclass mainActivityClass = env->FindClass(mainActivityClassName);
+    jmethodID show = env->GetMethodID(mainActivityClass, "show", "()V");
+    env->CallVoidMethod(thiz, show);
+    if (env->ExceptionCheck()) { // 这里不是native代码崩溃，
+        env->ExceptionDescribe(); // 输出表述信息
+        env->ExceptionClear(); // 清除异常
+        LOGI("native 清除Java异常。。。");
+    }
 }

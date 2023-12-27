@@ -97,12 +97,22 @@ public class MainActivity extends AppCompatActivity {
 
     public static native void localCache(String name); // 普通局部缓存
 
+
+    {
+        initStaticCache(); // 静态缓存在构造函数中初始化
+    }
+
     public static native void initStaticCache(); // 初始化静态缓存
 
     public static native void staticCache(String name);
 
     public static native void clearStaticCache(); // 清除化静态缓存
 
+    public static native void exception(); // 异常
+
+    public static native void exceptionNativeToJava() throws NoSuchFieldError; // native 抛给 java ,抛出来可以接收
+
+    public native void exceptionJavaToNative(); // java 抛给 native
 
     public void testFun(View view) {
 //        testQuote();
@@ -118,8 +128,18 @@ public class MainActivity extends AppCompatActivity {
 //            Log.i("MINGKE", "ndk qsort : " + anInt);
 //        }
 
-        localCache("newerkuai");
-        Log.i("MINGKE", "activity localCache: name1 = " + name1);
+//        localCache("newerkuai");
+//        Log.i("MINGKE", "activity localCache: name1 = " + name1);
+//        staticCache("static new erkuai");
+//        Log.i("MINGKE", "activity staticCache: name1 = " + name1);
+
+//        exception();
+//        try {
+//            exceptionNativeToJava();
+//        } catch (NoSuchFieldError e) {
+//            Log.i("MINGKE", "exceptionNativeToJava 的异常: " + e.toString());
+//        }
+        exceptionJavaToNative();
     }
 
 
@@ -140,4 +160,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+    public void show() throws Exception {
+        throw new NullPointerException("exception from java");
+    }
+
 }
