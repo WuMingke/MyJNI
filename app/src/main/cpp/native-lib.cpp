@@ -165,7 +165,7 @@ extern int age;
 extern void show();
 
 
-// 动态注册
+// 动态注册 开始
 void dynamicMethod01(JNIEnv *env, jobject thiz) {
     LOGI("动态注册的函数 dynamicMethod01 ...");
 }
@@ -210,3 +210,117 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *javaVm, void *) {
 }
 
 // 动态注册 结束
+
+
+class MyContext {
+public:
+    JNIEnv *jniEnv = nullptr;
+    jobject instance = nullptr;
+};
+
+void *myThreadTaskAction(void *pVoid) { // 异步线程
+    LOGI("native thread run ...");
+
+
+    JNIEnv *jniEnv = nullptr;
+    jint attachResult = ::javaVm->AttachCurrentThread(&jniEnv, nullptr); // 新建 jniEnv 给子线程用
+    if (attachResult != JNI_OK) {
+        return 0;
+    }
+
+    MyContext *myContext = static_cast<MyContext *>(pVoid);
+
+
+//    jclass mainActivityClass2 = jniEnv->FindClass(mainActivityClassName); // 这种方式找不到，只能GetObjectClass新建
+    jclass mainActivityClass = jniEnv->GetObjectClass(myContext->instance);
+    jmethodID updateActivityUI = jniEnv->GetMethodID(mainActivityClass,
+                                                     "updateActivityUI", "()V");
+
+    jniEnv->CallVoidMethod(myContext->instance, updateActivityUI);
+
+    ::javaVm->DetachCurrentThread(); // 需要detach
+
+    return 0;
+}
+
+// JNIEnv *env 不能跨越线程，【安卓进程只有一个JavaVM，是全局的，可跨越线程】
+// jobject thiz 不能跨越线程，不能跨越函数【解决方式：默认是局部引用，提升为全局引用】
+// JavaVM 可以跨越线程，可以跨越函数
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_nativeThread(JNIEnv *env, jobject thiz) { // 主线程
+//    pthread_t pid;
+//    pthread_create(&pid, nullptr, myThreadTaskAction, nullptr);
+//    pthread_join(pid, nullptr);
+
+    MyContext *myContext = new MyContext();
+//    myContext->jniEnv = env;
+//    myContext->instance = thiz;
+    myContext->instance = env->NewGlobalRef(thiz);//提升为全局引用
+
+    // 子线程
+    pthread_t pid;
+    pthread_create(&pid, nullptr, myThreadTaskAction, myContext);
+    pthread_join(pid, nullptr);
+
+    // 主线程
+//    jclass mainActivityClass = env->FindClass(mainActivityClassName);
+//    jmethodID updateActivityUI = env->GetMethodID(mainActivityClass,
+//                                                  "updateActivityUI", "()V");
+//    env->CallVoidMethod(thiz, updateActivityUI);
+
+
+    /**
+     * 1 JavaVM 全局，绑定当前进程，只有一个地址
+     * 2 JNIEnv 绑定线程，
+     * 3 jobject 谁调用JNI函数，谁的实例就会给jobject
+     */
+}
+
+
+// 调用 NDK 函数 qsort
+int compare(const jint *n1, const jint *n2) {
+    return *n1 - *n2;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_sort(JNIEnv *env, jobject thiz, jintArray array) {
+
+    jint *intArray = env->GetIntArrayElements(array, nullptr);
+    int length = env->GetArrayLength(array);
+    qsort(intArray, length, sizeof(int),
+          reinterpret_cast<int (*)(const void *, const void *)>(compare));
+    env->ReleaseIntArrayElements(array, intArray, 0);
+}
+
+// 非静态缓存
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_localCache(JNIEnv *env, jclass clazz, jstring str) {
+    jfieldID f_id = nullptr;
+    if (f_id == nullptr) {
+        f_id = env->GetStaticFieldID(clazz, "name1", "Ljava/lang/String;");
+    } else {
+        LOGI("空的");
+    }
+
+    env->SetStaticObjectField(clazz, f_id, str);
+    f_id = nullptr;
+}
+// 静态缓存1 在构造函数中调用
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_initStaticCache(JNIEnv *env, jclass clazz) {
+
+}
+// 静态缓存2 使用
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_staticCache(JNIEnv *env, jclass clazz, jstring str) {
+}
+// 静态缓存3 清理
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_myjni_MainActivity_clearStaticCache(JNIEnv *env, jclass clazz) {
+}

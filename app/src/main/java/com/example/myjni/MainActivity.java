@@ -1,8 +1,10 @@
 package com.example.myjni;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -86,11 +88,56 @@ public class MainActivity extends AppCompatActivity {
 
     public native void dynamicRegister2(String str);
 
+
+    public native void nativeThread();
+
+    public native void sort(int[] array);
+
+    public static String name1 = "erkuai";
+
+    public static native void localCache(String name); // 普通局部缓存
+
+    public static native void initStaticCache(); // 初始化静态缓存
+
+    public static native void staticCache(String name);
+
+    public static native void clearStaticCache(); // 清除化静态缓存
+
+
     public void testFun(View view) {
 //        testQuote();
 //        delQuote();
 
-        dynamicRegister();
-        dynamicRegister2("erkuai");
+//        dynamicRegister();
+//        dynamicRegister2("erkuai");
+
+//        nativeThread();
+//        int[] ints = {0, -1, 3, 4};
+//        sort(ints);
+//        for (int anInt : ints) {
+//            Log.i("MINGKE", "ndk qsort : " + anInt);
+//        }
+
+        localCache("newerkuai");
+        Log.i("MINGKE", "activity localCache: name1 = " + name1);
+    }
+
+
+    // 被native调用的java方法
+    public void updateActivityUI() {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("UI")
+                    .setMessage("updateActivityUI Activity UI ...")
+                    .setPositiveButton("i know", null)
+                    .show();
+        } else {
+            runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("UI")
+                    .setMessage("child thread updateActivityUI Activity UI ...")
+                    .setPositiveButton("i know", null)
+                    .show());
+        }
+
     }
 }
