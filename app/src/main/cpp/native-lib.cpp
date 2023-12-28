@@ -377,3 +377,5 @@ Java_com_example_myjni_MainActivity_exceptionJavaToNative(JNIEnv *env, jobject t
         LOGI("native 清除Java异常。。。");
     }
 }
+
+// JNIEnv 本质：JNINativeInterface

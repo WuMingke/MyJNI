@@ -5,11 +5,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.os.Looper;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.example.myjni.databinding.ActivityMainBinding;
+
+import java.io.Serializable;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -53,6 +57,11 @@ public class MainActivity extends AppCompatActivity {
         Log.i("MINGKE", "onCreate: student:" + student.toString());
 
         insertObject();
+
+
+        Parcel parcel = Parcel.obtain();
+        parcel.writeInt(2);
+        parcel.writeString("");
 
     }
 
@@ -113,6 +122,8 @@ public class MainActivity extends AppCompatActivity {
     public static native void exceptionNativeToJava() throws NoSuchFieldError; // native 抛给 java ,抛出来可以接收
 
     public native void exceptionJavaToNative(); // java 抛给 native
+
+
 
     public void testFun(View view) {
 //        testQuote();
